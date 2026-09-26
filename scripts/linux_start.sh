@@ -8,10 +8,17 @@ source "$script_dir/header.sh"
 validate_linux
 
 # generate encoded password file from plain text
-mkdir /home/user/.vnc &> /dev/null
-cat "$script_dir/vncpasswd" | vncpasswd -f > /home/user/.vnc/passwd
+mkdir -p /home/user/.vnc
+vncpasswd -f < "$script_dir/vncpasswd" > /home/user/.vnc/passwd
+chmod 600 /home/user/.vnc/passwd
 
-vncserver -DisconnectClients -NeverShared -nocursor -geometry $(tr -d "\n\r\t " < "$script_dir/vnc_resolution") -SecurityTypes VncAuth -PasswordFile /home/user/.vnc/passwd -localhost no -verbose -fg -RawKeyboard -RemapKeys "0xffe9->0xff7e,0xffe7->0xff7e" -- LXDE
+resolution=$(tr -d "\n\r\t " < "$script_dir/vnc_resolution")
+if [[ ! "$resolution" =~ ^[0-9]+x[0-9]+$ ]]; then
+    f_echo "Invalid VNC resolution '$resolution'; using 1920x1080."
+    resolution=1920x1080
+fi
+
+vncserver -DisconnectClients -NeverShared -nocursor -geometry "$resolution" -SecurityTypes VncAuth -PasswordFile /home/user/.vnc/passwd -localhost no -verbose -fg -RawKeyboard -RemapKeys "0xffe9->0xff7e,0xffe7->0xff7e" -- LXDE
 # explanation (see also TigerVNC manual):
 #
 # -DisconnectClients -NeverShared:

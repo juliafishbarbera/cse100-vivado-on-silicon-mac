@@ -1,0 +1,12 @@
+#### Vivado ML Standard Install Configuration ####
+Edition=Vivado ML Standard
+Product=Vivado
+Destination=/home/user/Xilinx
+Modules=Virtex UltraScale+ HBM:0,Zynq UltraScale+ MPSoC:0,DocNav:0,Kintex UltraScale:0,Zynq-7000:0,Spartan-7:0,Artix-7:1,Virtex UltraScale+:0,Kintex-7:0,Kintex UltraScale+:0,Vitis Model Composer(Xilinx Toolbox for MATLAB and Simulink. Includes the functionality of System Generator for DSP):0
+InstallOptions=
+CreateProgramGroupShortcuts=1
+ProgramGroupFolder=Xilinx Design Tools
+CreateShortcutsForAllUsers=0
+CreateDesktopShortcuts=1
+CreateFileAssociation=1
+EnableDiskUsageOptimization=1

@@ -1,52 +1,25 @@
 #!/bin/zsh
 
-# Attempts to configure Docker by enabling Rosetta and increasing swap
+# Checks Docker without changing global Docker Desktop settings.
 
 script_dir=$(dirname -- "$(readlink -nf $0)";)
 source "$script_dir/header.sh"
 validate_macos
 
-function cannot_setup_docker {
-    f_echo "Unfortunately, the script could not configure Docker automatically."
-    f_echo "This means that you have to change the settings in the Docker Dashboard yourself:"
-    f_echo "Enable the Virtualization Framework, Rosetta emulation and set Swap to at least 2 GiB."
-    f_echo "Restart Docker after applying the changes and then continue with the installation."
-    wait_for_user_input
+if ! start_docker; then
     exit 1
-}
-
-docker_settings_file="$HOME/Library/Group Containers/group.com.docker/settings.json"
-
-stop_docker
-
-# check if the settings file is in the expected place
-if ! [ -f "$docker_settings_file" ]
-then
-    cannot_setup_docker
 fi
 
-# check if the attributes to be modified exist
-if grep "\"useVirtualizationFramework\":" "$docker_settings_file" > /dev/null \
-&& grep "\"useVirtualizationFrameworkRosetta\":" "$docker_settings_file" > /dev/null \
-&& grep "\"swapMiB\":" "$docker_settings_file" > /dev/null
-then
-    :
+if docker image inspect "$container_image" > /dev/null 2>&1; then
+    if docker run --rm --platform linux/amd64 "$container_image" /bin/true > /dev/null 2>&1; then
+        f_echo "Docker can run amd64 Linux containers."
+        exit 0
+    fi
+    f_echo "Docker could not run the local amd64 image."
+    f_echo "Enable Rosetta for x86/amd64 emulation in Docker Desktop settings."
+    exit 1
 else
-    cannot_setup_docker
+    f_echo "Docker is ready. amd64 execution will be verified while building the image."
 fi
 
-# enable Virtualization Framework
-sed -i "" "s/\"useVirtualizationFramework\": false/\"useVirtualizationFramework\": true/" "$docker_settings_file"
-
-# enable Rosetta emulation
-sed -i "" "s/\"useVirtualizationFrameworkRosetta\": false/\"useVirtualizationFrameworkRosetta\": true/" "$docker_settings_file"
-
-# set swap to minimum 4 GiB
-minSwap=4096
-swapMiB=$(cat "$docker_settings_file" | grep "\"swapMiB\"" | sed "s/[^0-9]//g")
-if [ "$swapMiB" -lt "$minSwap" ]
-then
-    sed -i "" "s/\"swapMiB\": [0-9]*/\"swapMiB\": $minSwap/" "$docker_settings_file"
-fi
-
-f_echo "Configured Docker successfully"
+f_echo "If the build fails, enable Rosetta for x86/amd64 emulation in Docker Desktop settings."

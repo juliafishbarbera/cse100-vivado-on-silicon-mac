@@ -6,6 +6,9 @@
 script_dir=$(dirname -- "$(readlink -nf $0)";)
 source "$script_dir/hashes.sh"
 
+container_image="vivado-on-silicon:ubuntu22.04"
+container_name="vivado-on-silicon"
+
 # echo with color
 function f_echo {
 	echo -e "\e[1m\e[33m$1\e[0m"
@@ -34,7 +37,7 @@ function validate_linux {
 }
 
 function validate_internet {
-    if ! ping -q -c1 google.com &>/dev/null
+    if ! curl --silent --head --fail --max-time 10 https://github.com/ > /dev/null
     then
         f_echo "Internet connection required."
         exit 1
@@ -48,7 +51,7 @@ function wait_for_user_input {
 
 function start_docker {
     # check if Docker is installed
-    if ! which docker &> /dev/null
+    if ! command -v docker &> /dev/null
     then
         f_echo "You need to install Docker Desktop first."
         exit 1
@@ -56,36 +59,47 @@ function start_docker {
 
     # Launch Docker daemon
     f_echo "Launching Docker daemon..."
-    sleep 2
-    # Wait for Docker to start
-    while ! docker ps &> /dev/null
-    do
-        open -a Docker
+    if docker info &> /dev/null; then
+        return 0
+    fi
+
+    open -a Docker
+    for _ in {1..24}; do
+        if docker info &> /dev/null; then
+            return 0
+        fi
         sleep 5
     done
-    sleep 2
-}
 
-function stop_docker {
-    curl -s -X POST -H 'Content-Type: application/json' -d '{ "openContainerView": true }' -kiv --unix-socket "$HOME/Library/Containers/com.docker.docker/Data/backend.sock" http://localhost/engine/stop &> /dev/null
-    osascript -e 'quit app "Docker Desktop"'
-    sleep 2
+    f_echo "Docker did not become ready within two minutes."
+    return 1
 }
 
 vivado_version=""
 
 function set_vivado_version_from_hash {
-    if [[ -v web_hashes[$1] ]]
+    if [[ -n "${web_hashes[$1]:-}" ]]
     then
         vivado_version=${web_hashes[$1]}
-    elif [[ -v sfd_hashes[$1] ]]
+    elif [[ -n "${sfd_hashes[$1]:-}" ]]
     then
         vivado_version=${sfd_hashes[$1]}
     else
-        f_echo "Invalid installer hash"
-        exit 1
+        return 1
     fi
     return 0
+}
+
+function vivado_version_label {
+    echo "${version_labels[$1]:-$1}"
+}
+
+function print_supported_versions {
+    local code
+    for code in "${supported_version_codes[@]}"; do
+        printf '%s ' "${version_labels[$code]}"
+    done
+    echo
 }
 
 # The actual resolution is stored in the file vnc_resolution

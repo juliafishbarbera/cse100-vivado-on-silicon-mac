@@ -16,6 +16,18 @@ declare -A web_hashes=(
     ["8b0e99a41b851b50592d5d6ef1b1263d"]=202410
     ["abe838aa2e2d3d9b10fea94165e9a303"]=202520
 )
+
+# Keep version metadata in one place. Every entry here must have a matching
+# install_configs/<code>.txt file; scripts/check.sh enforces that invariant.
+declare -a supported_version_codes=(202110 202220 202310 202320 202410 202520)
+declare -A version_labels=(
+    [202110]="2021.1"
+    [202220]="2022.2"
+    [202310]="2023.1"
+    [202320]="2023.2"
+    [202410]="2024.1"
+    [202520]="2025.2"
+)
 # hashes for the full installer
 # not tested yet
 declare -A sfd_hashes=()
